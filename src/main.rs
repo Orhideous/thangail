@@ -29,7 +29,7 @@ fn process_cidr_block(blocks: &str, country_request: CountryRequest) -> String {
         .join("\n")
 }
 
-#[get("/?<list..>")]
+#[get("/api/v0/list?<list..>")]
 async fn list(list: CountryRequest<'_>, client: &State<Client>) -> Option<String> {
     let url = format!(
         "https://raw.githubusercontent.com/herrbischoff/country-ip-blocks/master/ipv4/{}.cidr",
