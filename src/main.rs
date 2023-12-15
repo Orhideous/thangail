@@ -16,17 +16,15 @@ fn process_cidr_block(blocks: &str, country_request: CountryRequest) -> String {
         name,
         timeout,
     } = country_request;
-    blocks
-        .trim()
-        .split('\n')
-        .map(|s| {
-            format!(
-                ":do {{ add address={} list={} timeout={} comment={} }} on-error={{}}",
-                s, name, timeout, country
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+    let add_commands = blocks.trim().split('\n').map(|s| {
+        format!(
+            ":do {{ add address={} list={} timeout={} comment={} }} on-error={{}}",
+            s, name, timeout, country
+        )
+    });
+    let mut commands = vec![String::from("/ip firewall address-list")];
+    commands.extend(add_commands);
+    commands.join("\n")
 }
 
 #[get("/api/v0/list?<list..>")]
