@@ -3,14 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="./simple.min.css">
+    <script defer src="./alpine.min.js"></script>
     <title>Thangail</title>
+    <style>
+        body {
+            grid-template-columns: 1fr min(75rem, 90%) 1fr;
+        }
+        body > footer {
+            margin-top: 2rem;
+        }
+    </style>
+    <script>
+        const thangailInit = () => Alpine.data("geofence", () => ({
+            async init() {
+                this.countries = await (await fetch("./countries.json")).json()
+            },
+            countries: [],
+            country: "",
+            get instructions() {
+                const filename = `${this.version}.list`;
+                const menu = `/ip${this.version === "v4" ? "" : "v6"}`;
+                const lines = [
+                    `${menu} firewall raw add chain=prerouting action=drop src-address-list=${this.name}`,
+                    `/tool fetch url="${this.url}" dst-path="${filename}"`,
+                    `/import ${filename}`,
+                    `/file remove ${filename}`
+                ];
+                return lines.join("\n");
+            },
+            name: "thangail",
+            get timeout() {
+                return `${this.ttl}${this.timespan}`
+            },
+            timespan: "d",
+            timespans: [
+                {code: "d", name: "days"},
+                {code: "h", name: "hours"},
+                {code: "w", name: "weeks"}
+            ],
+            ttl: 60,
+            get url() {
+                const params = new URLSearchParams({
+                    country: this.country,
+                    name: this.name,
+                    timeout: this.timeout,
+                    version: this.version
+                });
+                return `${window.location.origin}/api/v0?${params}`
+            },
+            version: "v4"
+        }));
+        document.addEventListener("alpine:init", thangailInit)
+    </script>
 </head>
 <body>
 <header>
     <h1>Thangail</h1>
     <p>Geofencing helper for Mikrotik</p>
 </header>
-<main>
+<main x-data="geofence">
+    <fieldset>
+        <legend>Protocol version</legend>
+        <input type="radio" value="v4" x-model="version"/> IPv4
+        <input type="radio" value="v6" x-model="version"/> IPv6
+    </fieldset>
+
+    <div>
+        <label for="list">List name</label>
+        <input type="text" id="list" x-model="name" minlength="1"/>
+    </div>
+
+    <div>
+        <label for="country">Blocked country</label>
+        <select id="country" x-model="country">
+            <option value="" disabled>Select a country</option>
+            <template x-for="country in countries">
+                <option :value="country.code" x-text="country.name"></option>
+            </template>
+        </select>
+    </div>
+
+    <div>
+        <label for="timeout">TTL</label>
+        <input type="number" name="timeout" min="1" max="180" id="timeout" x-model="ttl">
+        <select id="timespan" x-model="timespan">
+            <template x-for="timespan in timespans">
+                <option :value="timespan.code" x-text="timespan.name"></option>
+            </template>
+        </select>
+    </div>
+
+    <template x-if="country">
+        <div>
+            <p>Generated URL: <code x-text="url"></code></p>
+            <p>Sсript:</p>
+            <pre x-text="instructions"></pre>
+        </div>
+    </template>
+    <template x-if="!country">
+        <p>Select country first</p>
+    </template>
+
 </main>
 <footer>
     <p>made with 🌙 and lavender</p>

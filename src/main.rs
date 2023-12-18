@@ -8,6 +8,8 @@ use rocket_async_compression::{CachedCompression, Level};
 
 const INDEX: &'static str = include_str!("../static/index.html");
 const STYLE: &'static str = include_str!("../static/simple.min.css");
+const SCRIPT: &'static str = include_str!("../static/alpine.min.js");
+const COUNTRIES: &'static str = include_str!("../static/countries.json");
 const FAVICON: &'static [u8; 1_150] = include_bytes!("../static/favicon.ico");
 
 #[derive(Debug, PartialEq, FromFormField)]
@@ -60,6 +62,16 @@ async fn style() -> (ContentType, &'static str) {
     (ContentType::CSS, STYLE)
 }
 
+#[get("/alpine.min.js")]
+async fn script() -> (ContentType, &'static str) {
+    (ContentType::JavaScript, SCRIPT)
+}
+
+#[get("/countries.json")]
+async fn countries() -> (ContentType, &'static str) {
+    (ContentType::JSON, COUNTRIES)
+}
+
 #[get("/api/v0/list?<list..>")]
 async fn list(list: CountryRequest<'_>, client: &State<Client>) -> Option<String> {
     let ver = match list.version {
@@ -99,6 +111,6 @@ fn rocket() -> _ {
 
     rocket::build()
         .manage(client)
-        .mount("/", routes![index, list, favicon, style])
+        .mount("/", routes![index, list, favicon, style, script, countries])
         .attach(compression_fairing)
 }
