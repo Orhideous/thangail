@@ -4,6 +4,7 @@ extern crate rocket;
 use reqwest::Client;
 use rocket::http::ContentType;
 use rocket::State;
+use rocket_async_compression::{CachedCompression, Level};
 
 const INDEX: &'static str = include_str!("../static/index.html");
 const STYLE: &'static str = include_str!("../static/simple.min.css");
@@ -90,8 +91,14 @@ async fn list(list: CountryRequest<'_>, client: &State<Client>) -> Option<String
 #[launch]
 fn rocket() -> _ {
     let client = Client::new();
+    let compression_fairing = CachedCompression {
+        cached_path_suffixes: vec![".js".into(), ".css".into(), ".html".into()],
+        level: Some(Level::Best),
+        ..Default::default()
+    };
 
     rocket::build()
         .manage(client)
         .mount("/", routes![index, list, favicon, style])
+        .attach(compression_fairing)
 }
