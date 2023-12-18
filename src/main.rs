@@ -2,7 +2,12 @@
 extern crate rocket;
 
 use reqwest::Client;
+use rocket::http::ContentType;
 use rocket::State;
+
+const INDEX: &'static str = include_str!("../static/index.html");
+const STYLE: &'static str = include_str!("../static/simple.min.css");
+const FAVICON: &'static [u8; 1_150] = include_bytes!("../static/favicon.ico");
 
 #[derive(Debug, PartialEq, FromFormField)]
 enum IPVersion {
@@ -39,6 +44,21 @@ fn process_cidr_block(blocks: &str, country_request: CountryRequest) -> String {
     commands.join("\n")
 }
 
+#[get("/")]
+async fn index() -> (ContentType, &'static str) {
+    (ContentType::HTML, INDEX)
+}
+
+#[get("/favicon.ico")]
+async fn favicon() -> (ContentType, &'static [u8]) {
+    (ContentType::Icon, FAVICON)
+}
+
+#[get("/simple.min.css")]
+async fn style() -> (ContentType, &'static str) {
+    (ContentType::CSS, STYLE)
+}
+
 #[get("/api/v0/list?<list..>")]
 async fn list(list: CountryRequest<'_>, client: &State<Client>) -> Option<String> {
     let ver = match list.version {
@@ -71,5 +91,7 @@ async fn list(list: CountryRequest<'_>, client: &State<Client>) -> Option<String
 fn rocket() -> _ {
     let client = Client::new();
 
-    rocket::build().manage(client).mount("/", routes![list])
+    rocket::build()
+        .manage(client)
+        .mount("/", routes![index, list, favicon, style])
 }
