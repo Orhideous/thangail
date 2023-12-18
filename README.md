@@ -10,7 +10,7 @@ https://thangail.link
 ### Self-hosting
 Run image and expose service, say, at `http://thangail.lan:8080`
 ```sh
-docker run --rm -p 8080:80 ghcr.io/orhideous/thangail:master
+docker run --rm -p 8080:80 ghcr.io/orhideous/thangail:0.1.1
 ```
 Then, on MikroTik:
 ```sh
